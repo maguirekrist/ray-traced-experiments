@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <format>
 
 class Vec3 {
 public:
@@ -91,3 +92,19 @@ inline Vec3 cross(const Vec3& u, const Vec3& v) {
 inline Vec3 unit_vector(const Vec3& v) {
 	return v / v.length();
 }
+
+
+template<>
+struct std::formatter<Vec3> {
+	
+	constexpr auto parse(std::format_parse_context& ctx) {
+ 		
+		return ctx.begin();
+	}
+
+	auto format(const Vec3& obj, std::format_context& ctx) const {
+		return std::format_to(ctx.out(), "Vec3({}, {}, {})", obj.x(), obj.y(), obj.z());
+	}
+
+};
+
