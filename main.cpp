@@ -1,10 +1,14 @@
+#include <memory>
 #include <print>
 #include <random>
 #include <vector>
 #include <iostream>
 #include <fstream>
 
+#include "constants.hpp"
 #include "ray.hpp"
+#include "hittable_list.hpp"
+#include "sphere.hpp"
 
 struct Color {
 	int r, g, b;	
@@ -42,13 +46,12 @@ double hit_sphere(const Point3D& center, double radius, const Ray& r) {
 	}
 }
 
-Vec3 ray_color(const Ray& r) 
+Vec3 ray_color(const Ray& r, const Hittable& world) 
 {
-	auto t = hit_sphere(Point3D(0, 0, -1), 0.5, r);;
-	if (t > 0.0)
-	{
-		Vec3 N = unit_vector(r.at(t) - Vec3(0, 0, -1));
-		return 0.5 * Vec3(N.x()+1, N.y()+1, N.z()+1);
+	HitRecord rec;
+	if (world.hit(r, Interval(0, infinity), rec))
+     	{
+		return 0.5 * (rec.normal + Vec3(1,1,1));
 	}
 	auto unit_direction = unit_vector(r.direction());
 	auto a = 0.5 * (unit_direction.y() + 1.0);
@@ -100,6 +103,12 @@ constexpr auto image_height = static_cast<int>(image_width / aspect_ratio);
 int main() {
 	std::println("Generating image of width: {}, and height: {}", image_width, image_height);
 
+	//world
+	HittableList world;
+
+	world.add(std::make_shared<Sphere>(Point3D(0,0,-1), 0.5));
+	
+	world.add(std::make_shared<Sphere>(Point3D(0,-100.5, -1), 100));
 	//Camera
 	auto focal_length = 1.0;
 	auto viewport_height = 2.0;
@@ -136,7 +145,7 @@ int main() {
 			auto ray_direction = pixel_center - camera_center; 
 			Ray r(camera_center, ray_direction);
 			
-			Vec3 color = ray_color(r);
+			Vec3 color = ray_color(r, world);
 			write_color(file, color);
 		}
 	}
