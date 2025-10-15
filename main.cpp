@@ -9,27 +9,7 @@
 #include "ray.hpp"
 #include "hittable_list.hpp"
 #include "sphere.hpp"
-
-struct Color {
-	int r, g, b;	
-
-	Color() {}
-	Color(int r, int g, int b) : r(r), g(g), b(b) {}
-
-	Color(const Vec3& vector) {
-		auto unit_v = unit_vector(vector);
-
-		r = 255 * unit_v.x();
-		g = 255 * unit_v.y();
-		b = 255 * unit_v.z();
-	}
-};
-
-std::ostream& operator<<(std::ostream& ostream, const Color& color)
-{
-	ostream << color.r << " " << color.g << " " << color.b;
-	return ostream;
-}
+#include "camera.hpp"
 
 double hit_sphere(const Point3D& center, double radius, const Ray& r) {
 	Vec3 oc = center - r.origin();
@@ -46,24 +26,6 @@ double hit_sphere(const Point3D& center, double radius, const Ray& r) {
 	}
 }
 
-Vec3 ray_color(const Ray& r, const Hittable& world) 
-{
-	HitRecord rec;
-	if (world.hit(r, Interval(0, infinity), rec))
-     	{
-		return 0.5 * (rec.normal + Vec3(1,1,1));
-	}
-	auto unit_direction = unit_vector(r.direction());
-	auto a = 0.5 * (unit_direction.y() + 1.0);
-	//lerp - from 0 to a, from value to value. 
-	return (1.0 - a)*Vec3(1.0, 1.0, 1.0) + a *Vec3(0.5, 0.7, 1.0);	
-}
-
-void write_color(std::ostream& out, const Vec3& color)
-{
-	Color c(color);
-	out << c << ' ' << std::endl;
-}
 
 void generate_test_ppm(int rows, int cols)
 {
@@ -104,55 +66,21 @@ int main() {
 	std::println("Generating image of width: {}, and height: {}", image_width, image_height);
 
 	//world
-	HittableList world;
-
-	world.add(std::make_shared<Sphere>(Point3D(0,0,-1), 0.5));
-	
-	world.add(std::make_shared<Sphere>(Point3D(0,-100.5, -1), 100));
-	//Camera
-	auto focal_length = 1.0;
-	auto viewport_height = 2.0;
-	auto viewport_width = viewport_height * (double(image_width)/image_height);
-	auto camera_center = Point3D(0, 0, 0);
-
-	std::println("Viewport width: {}, height: {}", viewport_width, viewport_height);
-	auto viewport_u = Vec3(viewport_width, 0, 0);
-	auto viewport_v = Vec3(0, -viewport_height, 0);
-
-	auto pixel_delta_u = viewport_u / image_width;
-	auto pixel_delta_v = viewport_v / image_height;
-
-	auto viewport_upper_left = camera_center - Vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
-	auto pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
-
-//	..generate_test_ppm(image_width, image_height);
-	std::println("Viewport upper left is: {}", viewport_upper_left);
-	std::println("Pixel 00 location is: {}", pixel00_loc);
-
 	std::ofstream file;
 	file.open("example.ppm");
-	file << "P3" << '\n'; 
-	file << image_width << " " << image_height << '\n';
-	
-	file << 255 << '\n'; 
-	
 
-	for (auto j = 0; j < image_height; j++)
-	{
-		for(auto i = 0; i < image_width; i++)
-		{
-			auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-			auto ray_direction = pixel_center - camera_center; 
-			Ray r(camera_center, ray_direction);
-			
-			Vec3 color = ray_color(r, world);
-			write_color(file, color);
-		}
-	}
+	HittableList world;
 
-	file.flush();
+	world.add(std::make_shared<Sphere>(Point3D(0,0,-1), 0.5));	
+	world.add(std::make_shared<Sphere>(Point3D(0,-100.5, -1), 100));
+
+	Camera camera;
+
+	camera.aspect_ratio = aspect_ratio;
+	camera.image_width = image_width;
+
+	camera.render(file, world);
 	file.close();
-
 	return 0;
 }
 

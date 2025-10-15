@@ -20,6 +20,12 @@ public:
 	bool surrounds(double x) const {
 		return x > low && x < high;
 	}
+
+	double clamp(double x) const {
+		if (x < low) return low;
+		if (x > high) return high;
+		return x;
+	}
 	
 	static const Interval empty, universe;
 	
