@@ -5,7 +5,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "constants.hpp"
+#include "material.hpp"
 #include "ray.hpp"
 #include "hittable_list.hpp"
 #include "sphere.hpp"
@@ -43,8 +43,10 @@ void generate_test_ppm(int rows, int cols)
 
 	//write buffer
 	std::ofstream file;
-	file.open("example.ppm");
+	file.open("example.ppm", std::ios::trunc);
+	
 	file << "P3" << std::endl;
+
 	file << rows << " " << cols << '\n';
 	
 	file << 255 << '\n';
@@ -59,7 +61,7 @@ void generate_test_ppm(int rows, int cols)
 }
 
 constexpr auto aspect_ratio = 16.0 / 9.0;
-constexpr auto image_width = 400;
+constexpr auto image_width = 900;
 constexpr auto image_height = static_cast<int>(image_width / aspect_ratio);
 
 int main() {
@@ -67,18 +69,26 @@ int main() {
 
 	//world
 	std::ofstream file;
-	file.open("example.ppm");
+	file.open("example.ppm", std::ios::trunc);
 
 	HittableList world;
 
-	world.add(std::make_shared<Sphere>(Point3D(0,0,-1), 0.5));	
-	world.add(std::make_shared<Sphere>(Point3D(0,-100.5, -1), 100));
+	auto material_ground = std::make_shared<Lambertian>(Vec3(0.8, 0.8, 0.0));
+	auto material_center = std::make_shared<Lambertian>(Vec3(0.1, 0.2, 0.5));
+	auto material_left = std::make_shared<Metal>(Vec3(0.8, 0.8, 0.8));
+	auto material_right = std::make_shared<Metal>(Vec3(0.8, 0.6, 0.2));
+	
+
+	world.add(std::make_shared<Sphere>(Point3D(0,0,-1), 0.5, material_center));	
+	world.add(std::make_shared<Sphere>(Point3D(0,-100.5, -1), 100, material_ground));
+	world.add(std::make_shared<Sphere>(Point3D(-1.0, 0.0, -1), 0.5, material_left));
+	world.add(std::make_shared<Sphere>(Point3D(1.0, 0.0, -1), 0.5, material_right));
 
 	Camera camera;
 
 	camera.aspect_ratio = aspect_ratio;
 	camera.image_width = image_width;
-
+	camera.samples_per_pixel = 100;
 	camera.render(file, world);
 	file.close();
 	return 0;

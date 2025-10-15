@@ -1,10 +1,21 @@
 #pragma once
 
+#include <cmath>
 #include <print>
 
 #include "ray.hpp"
 #include "hittable.hpp"
 #include "constants.hpp"
+#include "vec.hpp"
+#include "material.hpp"
+
+inline double linear_to_gamma(double linear_component)
+{
+	if (linear_component > 0)
+		return std::sqrt(linear_component);
+
+	return 0.0;
+}
 
 struct Color {
 	int r, g, b;	
@@ -13,13 +24,18 @@ struct Color {
 	Color(int r, int g, int b) : r(r), g(g), b(b) {}
 
 	Color(const Vec3& vector) {
-		auto unit_v = unit_vector(vector);
-		
 		static const Interval intensity(0.000, 0.999);
-		r = 256 * intensity.clamp(unit_v.x());
-		g = 256 * intensity.clamp(unit_v.y());
-		b = 256 * intensity.clamp(unit_v.z());
+
+		auto rbyte = linear_to_gamma(vector.x());
+		auto gbyte = linear_to_gamma(vector.y());
+		auto bbyte = linear_to_gamma(vector.z());
+
+
+		r = int(256 * intensity.clamp(rbyte));
+		g = int(256 * intensity.clamp(gbyte));
+		b = int(256 * intensity.clamp(bbyte));
 	}
+
 };
 
 inline std::ostream& operator<<(std::ostream& ostream, const Color& color)
@@ -32,7 +48,8 @@ class Camera {
 public:
 	double aspect_ratio = 	1.0;
 	int image_width = 400;
-	int samples_per_pixel = 100;	
+	int samples_per_pixel = 10;	
+	int max_depth = 10;
 
 	void render(std::ostream& out, const Hittable& world)
 	{
@@ -51,7 +68,7 @@ public:
 				for (int sample = 0; sample < samples_per_pixel; sample++)
 				{
 					Ray r = get_ray(i, j);
-					pixel_color += ray_color(r, world);
+					pixel_color += ray_color(r, max_depth, world);
 				}
 
 			//	auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
@@ -99,13 +116,25 @@ private:
 		pixel_samples_scale = 1.0 / samples_per_pixel;
 	}
 
-	Vec3 ray_color(const Ray& r, const Hittable& world) 
+	Vec3 ray_color(const Ray& r, int depth, const Hittable& world) 
 	{
-		HitRecord rec;
-		if (world.hit(r, Interval(0, infinity), rec))
+		if (depth <= 0)
 		{
-			return 0.5 * (rec.normal + Vec3(1,1,1));
+			return Vec3(0, 0, 0);
 		}
+
+		HitRecord rec;
+		if (world.hit(r, Interval(0.001, infinity), rec))
+		{
+			Ray scattered;
+			Vec3 attenuation;
+			if (rec.mat->scatter(r, rec, attenuation, scattered))
+				return attenuation * ray_color(scattered, depth-1, world);
+		//	Vec3 direction = random_on_hemisphere2(rec.normal);
+		//	return 0.5 * ray_color(Ray(rec.p, direction), depth - 1, world);
+			return Vec3(0, 0, 0);
+		}
+
 		auto unit_direction = unit_vector(r.direction());
 		auto a = 0.5 * (unit_direction.y() + 1.0);
 		//lerp - from 0 to a, from value to value. 
@@ -115,8 +144,8 @@ private:
 	Ray get_ray(int i, int j) {
 		//generates a ray for pixel i, and j
 		//generate a random jitter
-		double jitter_i = random_double(-1.0, 1.0);
-		double jitter_j = random_double(-1.0, 1.0);
+		double jitter_i = random_double(-1.0, 1.0) / 2.0;
+		double jitter_j = random_double(-1.0, 1.0) / 2.0;
 		auto pixel_center = pixel00_loc + ((i + jitter_i) * pixel_delta_u) + ((j + jitter_j) * pixel_delta_v);
 
 		auto ray_direction = pixel_center - center; 
@@ -124,6 +153,8 @@ private:
 
 		return r;
 	}
+
+	
 	
 	void write_color(std::ostream& out, const Vec3& color)
 	{

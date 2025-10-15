@@ -1,5 +1,6 @@
 #pragma once
 
+#include "constants.hpp"
 #include <cmath>
 #include <iostream>
 #include <format>
@@ -42,6 +43,19 @@ public:
 
 	double length_squared() const {
 		return x()*x() + y()*y() + z()*z();
+	}
+
+	bool near_zero() const {
+		auto s = 1e-8;
+		return (std::fabs(e[0]) < s) && (std::fabs(e[1]) < s) && (std::fabs(e[2]) < s);
+	}
+
+	static Vec3 random() {
+		return Vec3(random_double(), random_double(), random_double());
+	}
+
+	static Vec3 random(double min, double max) {
+		return Vec3(random_double(min, max), random_double(min, max), random_double(min, max));
 	}
 };
 
@@ -93,6 +107,53 @@ inline Vec3 unit_vector(const Vec3& v) {
 	return v / v.length();
 }
 
+inline Vec3 random_unit_vector() {
+	while (true)
+	{
+		auto p = Vec3::random(-1, 1);
+		auto lensq = p.length_squared();
+		if (1e-160 < lensq && lensq <= 1)
+			return p / std::sqrt(lensq);
+	}
+}
+
+inline Vec3 random_on_hemisphere(const Vec3& normal) {
+	Vec3 on_unit_sphere = random_unit_vector();
+	if (dot(on_unit_sphere, normal) > 0.0)
+		return on_unit_sphere;
+	else
+		return -on_unit_sphere;
+}
+
+inline Vec3 random_sphereical_vector(double theta_low, double theta_high) {
+	double random_phi = random_double(0.0, 2.0 * pi);
+	double random_theta = random_double(theta_low, theta_high);
+
+	double s = std::sin(random_theta);
+	double x = std::cos(random_phi) * s;
+	double y = std::sin(random_phi) * s; 
+	double z = std::cos(random_theta);
+
+	return Vec3(x, y, z);
+}
+
+inline Vec3 random_on_hemisphere2(const Vec3& normal) {
+	//Create local coordinate system at the normal
+	Vec3 n = unit_vector(normal);
+	Vec3 up = std::fabs(n.y()) < 0.999 ? Vec3{0, 1, 0} : Vec3{0, 0, 1};
+	Vec3 tangent = unit_vector(cross(up, n));
+	Vec3 bitangent = cross(n, tangent);
+
+	//Sample a valid spherical coordinate
+	Vec3 l = random_sphereical_vector(0.0, pi / 2.0);
+
+	//transform this vector into original world coordinates.
+	return (l.x() * tangent) + (l.y() * bitangent) + (l.z() * n);
+}
+
+inline Vec3 reflect(const Vec3& v, const Vec3& n) {
+	return v - 2*dot(v,n)*n;
+}
 
 template<>
 struct std::formatter<Vec3> {
