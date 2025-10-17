@@ -12,6 +12,7 @@
 #include "hittable_list.hpp"
 #include "sphere.hpp"
 #include "camera.hpp"
+#include "lib/cfg/config.hpp"
 
 double hit_sphere(const Point3D& center, double radius, const Ray& r) {
 	Vec3 oc = center - r.origin();
@@ -91,7 +92,15 @@ int main(int argc, char *argv[]) {
 	
 	auto config = parse_args(argc, argv);	
 
-	//world
+	std::expected<cfg::Config, std::string> t_cfg = cfg::parse_file("init.ini");
+	if (t_cfg.has_value())
+	{
+		std::println("Config found!");
+	} else {
+		std::string err_str = t_cfg.error();
+		std::println("{}", err_str);
+	}
+//	world
 	std::ofstream file;
 	file.open("example.ppm", std::ios::trunc);
 
