@@ -67,7 +67,7 @@ constexpr auto image_width = 900;
 constexpr auto image_height = static_cast<int>(image_width / aspect_ratio);
 
 struct Config { 
-	int samples_per_pixel = 10;
+	int samples_per_pixel = 100;
 	int image_width = 600;
 };
 
@@ -88,7 +88,6 @@ Config parse_args(int arg_count, char *args[])
 }
 
 int main(int argc, char *argv[]) {
-	std::println("Generating image of width: {}, and height: {}", image_width, image_height);
 	
 	auto config = parse_args(argc, argv);	
 
@@ -100,7 +99,8 @@ int main(int argc, char *argv[]) {
 
 	auto material_ground = std::make_shared<Lambertian>(Vec3(0.8, 0.8, 0.0));
 	auto material_center = std::make_shared<Lambertian>(Vec3(0.1, 0.2, 0.5));
-	auto material_left = std::make_shared<Metal>(Vec3(0.8, 0.8, 0.8), 1.0);
+	auto material_red = std::make_shared<Lambertian>(Vec3(1.0, 0.0, 0.0));
+	auto material_left = std::make_shared<Metal>(Vec3(0.8, 0.8, 0.8), 0.0);
 	auto material_right = std::make_shared<Metal>(Vec3(0.8, 0.6, 0.2), 0.5);
 	auto material_reflective = std::make_shared<Dielectric>(1.50);	
 
@@ -108,12 +108,22 @@ int main(int argc, char *argv[]) {
 	world.add(std::make_shared<Sphere>(Point3D(0,-100.5, -1), 100, material_ground));
 	world.add(std::make_shared<Sphere>(Point3D(-1.0, 0.0, -1), 0.5, material_left));
 	world.add(std::make_shared<Sphere>(Point3D(1.0, 0.0, -1), 0.5, material_reflective));
+	world.add(std::make_shared<Sphere>(Point3D(-2, 2, 3), 0.5, material_red));
 
 	Camera camera;
 
 	camera.aspect_ratio = aspect_ratio;
 	camera.image_width = config.image_width;
 	camera.samples_per_pixel = config.samples_per_pixel;
+	camera.vfov = 20.0;
+	camera.lookfrom = Point3D(-2, 2, 1);
+	camera.lookat = Point3D(0, 0, -1);
+	camera.vup = Vec3(0, 1, 0);
+
+	camera.defocus_angle = 0.0;
+	camera.focus_dist = 10.4;
+
+	std::println("Generating image of width: {}, and height: {}", camera.image_width, image_height);
 	camera.render(file, world);
 	file.close();
 	return 0;
