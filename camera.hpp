@@ -130,8 +130,6 @@ private:
 			Vec3 attenuation;
 			if (rec.mat->scatter(r, rec, attenuation, scattered))
 				return attenuation * ray_color(scattered, depth-1, world);
-		//	Vec3 direction = random_on_hemisphere2(rec.normal);
-		//	return 0.5 * ray_color(Ray(rec.p, direction), depth - 1, world);
 			return Vec3(0, 0, 0);
 		}
 

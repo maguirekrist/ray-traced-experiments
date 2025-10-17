@@ -7,11 +7,11 @@
 class Material;
 
 struct HitRecord {
-	Point3D p;
-	Vec3 normal;
-	std::shared_ptr<Material> mat;
-	double t;
-	bool front_face;
+	Point3D p; //point of contact
+	Vec3 normal; //surface normal
+	std::shared_ptr<Material> mat; //hit material
+	double t; //the t value that solved the hit equation.
+	bool front_face; //are we facing the front?
 
 	void set_face_normal(const Ray& r, const Vec3& outward_normal) {
 		// sets the hit record normal vector;

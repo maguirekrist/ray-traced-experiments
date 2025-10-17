@@ -38,16 +38,37 @@ private:
 
 class Metal : public Material {
 public:
-	Metal(const Vec3& albedo) : albedo(albedo) {};
+	Metal(const Vec3& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1 ? fuzz : 1) {};
 
 	bool scatter(const Ray &r_in, const HitRecord &rec, Vec3 &attentuation, Ray &scattered) const override {
 		Vec3 reflected = reflect(r_in.direction(), rec.normal);
+		reflected = unit_vector(reflected) + (fuzz * random_unit_vector());
 		scattered = Ray(rec.p, reflected);
 		attentuation = albedo;
-		return true;
+		return (dot(scattered.direction(), rec.normal) > 0);
 	}
 
 private:
 	Vec3 albedo;
+	double fuzz;
 };
 
+class Dielectric : public Material {
+public:
+	Dielectric(double wavefactor) : wavefactor(wavefactor) {}
+
+	bool scatter(const Ray &r_in, const HitRecord &rec, Vec3 &attentuation, Ray &scattered) const override
+	{
+//		return false;
+		attentuation = Vec3(1.0, 1.0, 1.0);	
+		double ri = rec.front_face ? (1.0/wavefactor) : wavefactor;
+
+		Vec3 unit_direction = unit_vector(r_in.direction());
+		Vec3 refracted = refract(unit_direction, rec.normal, ri);
+
+		scattered = Ray(rec.p, refracted);
+		return true;
+	}
+private:
+	double wavefactor;
+};

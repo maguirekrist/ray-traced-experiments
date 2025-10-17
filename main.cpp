@@ -1,6 +1,8 @@
 #include <memory>
+#include <optional>
 #include <print>
 #include <random>
+#include <string>
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -64,8 +66,31 @@ constexpr auto aspect_ratio = 16.0 / 9.0;
 constexpr auto image_width = 900;
 constexpr auto image_height = static_cast<int>(image_width / aspect_ratio);
 
-int main() {
+struct Config { 
+	int samples_per_pixel = 10;
+	int image_width = 600;
+};
+
+Config parse_args(int arg_count, char *args[])
+{
+	Config config;
+	if (arg_count >= 2)
+	{
+		std::string imageWidth = args[1];
+		config.image_width = std::stoi(imageWidth);
+	}
+	if (arg_count >= 3)
+	{
+		std::string samplesPerPixel = args[2];
+		config.samples_per_pixel = std::stoi(samplesPerPixel);
+	}
+     	return config;
+}
+
+int main(int argc, char *argv[]) {
 	std::println("Generating image of width: {}, and height: {}", image_width, image_height);
+	
+	auto config = parse_args(argc, argv);	
 
 	//world
 	std::ofstream file;
@@ -75,20 +100,20 @@ int main() {
 
 	auto material_ground = std::make_shared<Lambertian>(Vec3(0.8, 0.8, 0.0));
 	auto material_center = std::make_shared<Lambertian>(Vec3(0.1, 0.2, 0.5));
-	auto material_left = std::make_shared<Metal>(Vec3(0.8, 0.8, 0.8));
-	auto material_right = std::make_shared<Metal>(Vec3(0.8, 0.6, 0.2));
-	
+	auto material_left = std::make_shared<Metal>(Vec3(0.8, 0.8, 0.8), 1.0);
+	auto material_right = std::make_shared<Metal>(Vec3(0.8, 0.6, 0.2), 0.5);
+	auto material_reflective = std::make_shared<Dielectric>(1.50);	
 
 	world.add(std::make_shared<Sphere>(Point3D(0,0,-1), 0.5, material_center));	
 	world.add(std::make_shared<Sphere>(Point3D(0,-100.5, -1), 100, material_ground));
 	world.add(std::make_shared<Sphere>(Point3D(-1.0, 0.0, -1), 0.5, material_left));
-	world.add(std::make_shared<Sphere>(Point3D(1.0, 0.0, -1), 0.5, material_right));
+	world.add(std::make_shared<Sphere>(Point3D(1.0, 0.0, -1), 0.5, material_reflective));
 
 	Camera camera;
 
 	camera.aspect_ratio = aspect_ratio;
-	camera.image_width = image_width;
-	camera.samples_per_pixel = 100;
+	camera.image_width = config.image_width;
+	camera.samples_per_pixel = config.samples_per_pixel;
 	camera.render(file, world);
 	file.close();
 	return 0;
