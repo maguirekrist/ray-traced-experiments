@@ -2,8 +2,12 @@
 
 #include "constants.hpp"
 #include <cmath>
+#include <immintrin.h>
 #include <iostream>
 #include <format>
+#include <x86intrin.h>
+#include <xmmintrin.h>
+
 
 class Vec3 {
 public:
@@ -93,6 +97,19 @@ inline double dot(const Vec3& u, const Vec3& v) {
 	return u.x() * v.x()
 		+ u.y() * v.y()
 		+ u.z() * v.z();
+}
+
+inline double dot_sse(const Vec3& u, const Vec3& v) {
+	__m256d m_u = _mm256_setr_pd(u.x(), u.y(), u.z(), 0.0);
+	__m256d m_v = _mm256_setr_pd(v.x(), v.y(), v.z(), 0.0);
+	__m256d prod = _mm256_mul_pd(m_u, m_v); 				
+
+	__m128d lo = _mm256_castpd256_pd128(prod);
+	__m128d hi = _mm256_extractf128_pd(prod, 1);
+
+	__m128d sum2 = _mm_add_pd(lo, hi);
+	__m128d sum1 = _mm_hadd_pd(sum2, sum2);
+	return _mm_cvtsd_f64(sum1);
 }
 
 inline Vec3 cross(const Vec3& u, const Vec3& v) {

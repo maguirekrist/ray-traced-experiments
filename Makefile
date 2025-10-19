@@ -1,5 +1,5 @@
 CXX := g++
-CXXFLAGS := -std=c++23 -Wall -Wextra
+CXXFLAGS := -std=c++23 -O3 -g -fno-omit-frame-pointer -march=native -ffast-math -Wall -Wextra
 
 APP_SRCS := main.cpp vec.cpp ray.cpp 
 APP_OBJS := $(APP_SRCS:.cpp=.o)
@@ -7,6 +7,8 @@ APP_OBJS := $(APP_SRCS:.cpp=.o)
 LIB_NAME := libcfg.a
 LIB_SRCS := lib/cfg/config.cpp
 LIB_OBJS := $(LIB_SRCS:.cpp=.o)
+
+
 
 all: main
 
@@ -23,7 +25,7 @@ $(LIB_OBJS): $(LIB_SRCS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 TEST_BIN := tests/test_cfg
-
+TEST_FILES := tests/test_cfg.cpp tests/vec3_tests.cpp
 CATCH_OBJ := third_party/catch2/catch_amalgamated.o
 
 third_party/catch2/catch_amalgamated.o: third_party/catch2/catch_amalgamated.cpp
@@ -32,10 +34,10 @@ third_party/catch2/catch_amalgamated.o: third_party/catch2/catch_amalgamated.cpp
 test: $(TEST_BIN)
 	./$(TEST_BIN)
 
-$(TEST_BIN): tests/test_cfg.cpp $(LIB_NAME) $(CATCH_OBJ)
+$(TEST_BIN): $(TEST_FILES) $(LIB_NAME) $(CATCH_OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 clean:
-	rm -f $(APP_OBJS) $(LIB_OBJS) $(LIB_NAME) main $(TEST_BIN) example.ppm
+	rm -f $(APP_OBJS) $(LIB_OBJS) $(LIB_NAME) perf.data main $(TEST_BIN) example.ppm
 
 .PHOHY: all test clean

@@ -5,7 +5,6 @@
 #include <condition_variable>
 #include <functional>
 #include <mutex>
-#include <print>
 #include <queue>
 #include <stdexcept>
 #include <thread>
@@ -15,7 +14,6 @@ class ThreadPool {
 public:
 
 	explicit ThreadPool(size_t n = std::max(1u, std::thread::hardware_concurrency())) {
-		std::println("Thread pool created with {} workers", n);
 		for(size_t i = 0; i < n; i++)
 		{
 			_threads.emplace_back([this, i](std::stop_token st) {
@@ -33,7 +31,6 @@ public:
 					}
 
 					//Job begin
-					std::println("Begin Job!");
 					job();
 					{
 						std::lock_guard lk(_mutex);
@@ -43,7 +40,6 @@ public:
 						}
 					}
 				}	
-				std::println("{} thread done.", i);
 			});
 		
 		}

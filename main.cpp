@@ -14,7 +14,6 @@
 #include "camera.hpp"
 #include "lib/cfg/config.hpp"
 
-
 constexpr auto aspect_ratio = 16.0 / 9.0;
 
 struct Config { 

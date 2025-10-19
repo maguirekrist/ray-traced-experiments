@@ -12,6 +12,7 @@
 #include "vec.hpp"
 #include "material.hpp"
 #include "thread_pool.hpp"
+#include "lib/tui/tui.hpp"
 
 inline double linear_to_gamma(double linear_component)
 {
@@ -93,6 +94,8 @@ public:
 		std::println("Spawning {} workers", tiles_x * tiles_y);
 		std::vector<Vec3> framebuffer(image_width * image_height);
 
+		tui::LoadingIndicator loader(tiles_x * tiles_y);
+
 		{
 			ThreadPool pool;
 			for(int ty = 0; ty < tiles_y; ty++)
@@ -106,7 +109,7 @@ public:
 					
 					pool.execute([&, x0, x1, y0, y1] {
 						render_tile(world, x0, y0, x1, y1, framebuffer);
-						std::println("Tile Complete x: {}, y: {}", x0, y0);
+						++loader;
 					});
 				}
 			}
