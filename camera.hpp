@@ -2,12 +2,16 @@
 
 #include <cmath>
 #include <print>
-
+#include <thread>
+#include <vector>
+#include <cassert>
+#include "hittable_list.hpp"
 #include "ray.hpp"
 #include "hittable.hpp"
 #include "constants.hpp"
 #include "vec.hpp"
 #include "material.hpp"
+#include "thread_pool.hpp"
 
 inline double linear_to_gamma(double linear_component)
 {
@@ -44,9 +48,18 @@ inline std::ostream& operator<<(std::ostream& ostream, const Color& color)
 	return ostream;
 }
 
+struct Kernel {
+	int width = 0;
+	int height = 0;
+	int startW = 0;
+	int startH = 0;
+	std::vector<Vec3> colors;
+};
+
+
 class Camera {
 public:
-	double aspect_ratio = 	1.0;
+	double aspect_ratio = 16.0 / 9.0;
 	int image_width = 400;
 	int samples_per_pixel = 10;	
 	int max_depth = 10;
@@ -65,26 +78,47 @@ public:
 
 		out << "P3" << '\n'; 
 		out << image_width << " " << image_height << '\n';
-
 		out << 255 << '\n'; 
-		
-		for (auto j = 0; j < image_height; j++)
+		std::println("Generating image of width: {}, height: {}", image_width, image_height);	
+
+
+		const int tiles_x = 16;
+		const int tiles_y = 16;
+
+		const int tile_w = (image_width + tiles_x - 1) / tiles_x;
+		const int tile_h = (image_height + tiles_y - 1) / tiles_y;
+		//break the image into 16 by 16 sections.
+
+
+		std::println("Spawning {} workers", tiles_x * tiles_y);
+		std::vector<Vec3> framebuffer(image_width * image_height);
+
 		{
-			for(auto i = 0; i < image_width; i++)
+			ThreadPool pool;
+			for(int ty = 0; ty < tiles_y; ty++)
 			{
-				Vec3 pixel_color(0, 0, 0);
-				for (int sample = 0; sample < samples_per_pixel; sample++)
+				for (int tx = 0; tx < tiles_x; tx++)
 				{
-					Ray r = get_ray(i, j);
-					pixel_color += ray_color(r, max_depth, world);
+					const int x0 = tx*tile_w;
+					const int x1 = std::min(x0 + tile_w, image_width);
+					const int y0 = ty*tile_h;
+					const int y1 = std::min(y0 + tile_h, image_height);
+					
+					pool.execute([&, x0, x1, y0, y1] {
+						render_tile(world, x0, y0, x1, y1, framebuffer);
+						std::println("Tile Complete x: {}, y: {}", x0, y0);
+					});
 				}
+			}
+		}
 
-			//	auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-			//	auto ray_direction = pixel_center - center; 
-			//	Ray r(center, ray_direction);
+		std::println("Work complete");
 
-			//	Vec3 color = ray_color(r, world);
-				write_color(out, pixel_samples_scale * pixel_color);
+		for(int y = 0; y < image_height; ++y)
+		{
+			for(int x = 0; x < image_width; ++x)
+			{
+				write_color(out, framebuffer[y * image_width + x]);
 			}
 		}
 
@@ -100,20 +134,21 @@ private:
 	double pixel_samples_scale;
 
 	Vec3 u, v, w; //Camera frame basis vectors.
-	Vec3 defocus_disk_u;   	//Defocus disk horizontal radius
-	Vec3 defocus_disk_v;	//Defocus disk vertical radius
+//	Vec3 defocus_disk_u;   	//Defocus disk horizontal radius
+//	Vec3 defocus_disk_v;	//Defocus disk vertical radius
 
 	void initialize() {
 		image_height = int(image_width / aspect_ratio);
+		image_height = (image_height < 1) ? 1 : image_height;
+		pixel_samples_scale = 1.0 / samples_per_pixel;
+		center = lookfrom; 
 
-		// auto focal_length = (lookfrom - lookat).length();
-
+		auto focal_length = (lookfrom - lookat).length();
 		auto theta = degrees_to_radians(vfov);
 		auto h = std::tan(theta/2);
 
-		auto viewport_height = 2 * h * focus_dist;		
+		auto viewport_height = 2 * h * focal_length;		
 		auto viewport_width = viewport_height * (double(image_width)/image_height);
-		center = lookfrom; 
 
 		w = unit_vector(lookfrom - lookat); //Vector from look-at to lookfrom
 		u = unit_vector(cross(vup, w)); //vector orthogonal to vup and w.
@@ -126,17 +161,40 @@ private:
 		pixel_delta_u = viewport_u / image_width;
 		pixel_delta_v = viewport_v / image_height;
 
-		auto viewport_upper_left = center - (focus_dist * w) - viewport_u/2 - viewport_v/2;
+		auto viewport_upper_left = center - (focal_length * w) - viewport_u/2 - viewport_v/2;
 		pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
-		auto defocus_radius = focus_dist * std::tan(degrees_to_radians(defocus_angle / 2));
-		defocus_disk_u = u * defocus_radius;
-		defocus_disk_v = v * defocus_radius;
+//		auto defocus_radius = focus_dist * std::tan(degrees_to_radians(defocus_angle / 2.0));
+//		defocus_disk_u = u * defocus_radius;
+//		defocus_disk_v = v * defocus_radius;
 
+		std::println("Viewport U: {}", viewport_u);
+		std::println("Viewport V: {}", viewport_v);
 		std::println("Viewport upper left is: {}", viewport_upper_left);
 		std::println("Pixel 00 location is: {}", pixel00_loc);
+		std::println("Samples per pixel: {}", samples_per_pixel);
+		std::println("vfov: {}", vfov);
+		std::println("focus_dist: {}", focus_dist);
 
-		pixel_samples_scale = 1.0 / samples_per_pixel;
+	}
+
+
+	void render_tile(const Hittable& world, int startWidth, int startHeight, int width, int height, std::vector<Vec3>& fb)
+	{
+		for(int y = startHeight; y < height; y++) {
+			for(int x = startWidth; x < width; x++)
+			{
+				Vec3 pixel_color(0, 0, 0);
+				for (int sample = 0; sample < samples_per_pixel; sample++)
+				{
+					Ray r = get_ray(x, y);
+					pixel_color += ray_color(r, max_depth, world);
+				}
+
+				fb[y * image_width + x] = pixel_samples_scale * pixel_color;
+
+			}
+		}
 	}
 
 	Vec3 ray_color(const Ray& r, int depth, const Hittable& world) 
@@ -164,28 +222,36 @@ private:
 
 	Ray get_ray(int i, int j) {
 		//generates a ray for pixel i, and j
-		//generate a random jitter
-		double jitter_i = random_double(-1.0, 1.0) / 2.0;
-		double jitter_j = random_double(-1.0, 1.0) / 2.0;
+		//generate a random jitter - small random offset within the pixel
+		double jitter_i = random_double(-0.5, 0.5);
+		double jitter_j = random_double(-0.5, 0.5);
 		auto pixel_center = pixel00_loc + ((i + jitter_i) * pixel_delta_u) + ((j + jitter_j) * pixel_delta_v);
 
-		auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
+		//auto ray_origin = (defocus_angle <= 0.1) ? center : defocus_disk_sample();
+		auto ray_origin = center;
 		auto ray_direction = pixel_center - ray_origin; 
-		Ray r(center, ray_direction);
+		Ray r(ray_origin, ray_direction);
 
 		return r;
 	}
 
-	
-	Point3D defocus_disk_sample() const {
-		auto p = random_in_unit_disk();
-		return center + (p.x() * defocus_disk_u) + (p.y() * defocus_disk_v);
-	}
+	//
+	// Point3D defocus_disk_sample() const {
+	// 	auto p = random_in_unit_disk();
+	// 	return center + (p.x() * defocus_disk_u) + (p.y() * defocus_disk_v);
+	// }
 	
 	void write_color(std::ostream& out, const Vec3& color)
 	{
 		Color c(color);
 		out << c << ' ' << std::endl;
+	}
+	
+	void write_kernel(std::ostream& out, const Kernel& kernel)
+	{
+		for(const auto& color : kernel.colors) {
+			write_color(out, color);
+		}	
 	}
 }; 
 

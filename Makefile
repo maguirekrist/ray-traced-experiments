@@ -36,6 +36,6 @@ $(TEST_BIN): tests/test_cfg.cpp $(LIB_NAME) $(CATCH_OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 clean:
-	rm -f $(APP_OBJS) $(LIB_OBJS) $(LIB_NAME) main $(TEST_BIN)
+	rm -f $(APP_OBJS) $(LIB_OBJS) $(LIB_NAME) main $(TEST_BIN) example.ppm
 
 .PHOHY: all test clean

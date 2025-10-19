@@ -13,8 +13,8 @@ inline double degrees_to_radians(double degrees) {
 
 //generates a random double between 0 and 1.0, [0.0, 1.0)
 inline double random_double() {
-	static std::uniform_real_distribution<double> distribution(0.0, 1.0);
-	static std::mt19937 generator;
+	thread_local std::mt19937 generator;
+	static thread_local std::uniform_real_distribution<double> distribution(0.0, 1.0);
 	return distribution(generator);
 }
 

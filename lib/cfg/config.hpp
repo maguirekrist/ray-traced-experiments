@@ -42,6 +42,18 @@ namespace cfg {
 	struct Config {
 		std::unordered_map<std::string, KeyValuePair> kv;
 		std::optional<KeyValuePair> get(std::string key) const;
+		
+		template<typename T>
+		T get_value_or(std::string key, T defaultValue) {
+			if(get(key).has_value())
+			{
+				auto evalue = get(key)->get_value<T>();
+				if (!evalue.has_value()) { throw std::exception(); }
+				return evalue.value();
+			} else {
+				return defaultValue;
+			}	
+		}
 	};
 
 	std::expected<Config, std::string> parse_file(const std::string& path);
