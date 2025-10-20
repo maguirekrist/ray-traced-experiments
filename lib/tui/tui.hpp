@@ -2,9 +2,14 @@
 
 #include <atomic>
 #include <iostream>
-#include <print>
 
 namespace tui {
+
+inline constexpr std::string red = "\033[31m";
+inline constexpr std::string green = "\033[32m";
+inline constexpr std::string yellow = "\033[33m";
+
+inline constexpr std::string reset = "\033[0m";
 
 class LoadingIndicator {
 public:
@@ -18,10 +23,10 @@ public:
 		bar.resize(_width, ' ');
 		int percentage = static_cast<int>(progress * 100.0 + 0.5);
 
-
-		std::cout << "\r[" << bar << "] " << percentage << "%";
+		//|r here tells the cursor to go to the beginning of the line, allows us to rewrite existing
+		//text from the buffer
+		std::cout << "\r[" << bar << "] " << green << percentage << "%";
 		std::cout.flush();
-
 	}
 
 	LoadingIndicator& operator++() {

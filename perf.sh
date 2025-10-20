@@ -1,1 +1,1 @@
-/usr/lib/linux-tools/6.8.0-85-generic/perf top -g --call-graph dwarf -- ./main
+./main & /usr/lib/linux-tools/6.8.0-85-generic/perf top -p $(pidof main) -g --call-graph dwarf

@@ -28,6 +28,7 @@ static double sum_dot_avx(const std::vector<Vec3>& A, const std::vector<Vec3>& B
 	return acc;
 }
 
+
 TEST_CASE("Vec Dot Benchmarks") {
 
 	
@@ -52,3 +53,6 @@ TEST_CASE("Vec Dot Benchmarks") {
 	};
 
 }
+
+
+
