@@ -2,15 +2,13 @@
 
 #include <cmath>
 #include <print>
-#include <thread>
 #include <vector>
 #include <cassert>
-#include "hittable_list.hpp"
 #include "ray.hpp"
 #include "hittable.hpp"
 #include "constants.hpp"
-#include "vec.hpp"
 #include "material.hpp"
+#include "vec.hpp"
 #include "thread_pool.hpp"
 #include "lib/tui/tui.hpp"
 
@@ -72,6 +70,10 @@ public:
 	
 	double defocus_angle = 0; // Variaton angle of rays through each pixel.
 	double focus_dist = 10; // Distance from camera lookfrom point to plane of perfect focus
+	
+
+	explicit Camera(std::vector<Vec3> lights) : light_sources(lights) {  }
+	
 
 	void render(std::ostream& out, const Hittable& world)
 	{
@@ -114,8 +116,10 @@ public:
 				}
 			}
 		}
-
-		std::println("Work complete");
+		
+		std::cout.flush();
+		
+		std::println("\nWork complete");
 
 		for(int y = 0; y < image_height; ++y)
 		{
@@ -139,6 +143,7 @@ private:
 	Vec3 u, v, w; //Camera frame basis vectors.
 //	Vec3 defocus_disk_u;   	//Defocus disk horizontal radius
 //	Vec3 defocus_disk_v;	//Defocus disk vertical radius
+	std::vector<Vec3> light_sources;
 
 	void initialize() {
 		image_height = int(image_width / aspect_ratio);
@@ -210,11 +215,28 @@ private:
 		HitRecord rec;
 		if (world.hit(r, Interval(0.001, infinity), rec))
 		{
+			//We've hit something in the world
+			Vec3 output(0.0, 0.0, 0.0);
 			Ray scattered;
 			Vec3 attenuation;
 			if (rec.mat->scatter(r, rec, attenuation, scattered))
-				return attenuation * ray_color(scattered, depth-1, world);
-			return Vec3(0, 0, 0);
+				output = attenuation * ray_color(scattered, depth-1, world);
+			//We need to now attenuate the reflected light if there exists a shadow on this point.
+			//First, we should create a ray that points to a light source whose origin is the hit point.
+			for(auto& light_center : light_sources) {
+				//we need to get the Direction vector, i.e. a normal from the point to the light center
+				auto difference_vector = light_center - rec.p; //the vector from point P to light
+				Vec3 dir = unit_vector(difference_vector); 
+				Ray ray(rec.p, dir);
+				//Ok, we need to now check if this shadow ray intersects with anything in the world!
+				HitRecord shadow_hit;
+				if (world.hit(ray, Interval(0.001, infinity), shadow_hit)) {
+					//we hit something! we should dampen the output color now I guess?
+					output *= 0.4;
+				}
+			}
+
+			return output;
 		}
 
 		auto unit_direction = unit_vector(r.direction());

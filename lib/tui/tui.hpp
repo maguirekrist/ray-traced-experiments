@@ -17,7 +17,7 @@ public:
 	explicit LoadingIndicator(int work_units) : _work_units(work_units) {}
 
 	void render() {
-		const double progress = _work_progress / static_cast<double>(_work_units);
+		const double progress = _work_progress.load(std::memory_order_relaxed) / static_cast<double>(_work_units);
 		int filled = static_cast<int>(progress * _width + 0.5);
 		std::string bar(filled, '=');
 		bar.resize(_width, ' ');
@@ -30,7 +30,7 @@ public:
 	}
 
 	LoadingIndicator& operator++() {
-		++_work_progress;
+		_work_progress.fetch_add(1, std::memory_order_relaxed);
 		render();
 		return *this;
 	}

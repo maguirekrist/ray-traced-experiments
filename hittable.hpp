@@ -26,4 +26,6 @@ public:
 	virtual ~Hittable() = default;
 
 	virtual bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const = 0;
+
+	virtual Point3D center() const = 0;
 };

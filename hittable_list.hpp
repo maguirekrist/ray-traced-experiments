@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdexcept>
 #include <vector>
 #include <memory>
 #include "hittable.hpp"
@@ -7,6 +8,7 @@
 class HittableList : public Hittable {
 public:
 	std::vector<std::shared_ptr<Hittable>> objects;
+
 
 	HittableList() {}
 	HittableList(std::shared_ptr<Hittable> object) { add(object); }
@@ -31,5 +33,9 @@ public:
 		}
 
 		return hit_anything;
+	}
+
+	Point3D center() const override {
+		throw std::runtime_error("Cannot call center on world!");
 	}
 };

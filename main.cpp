@@ -115,12 +115,14 @@ HittableList gen_test_scene() {
 	auto material_left = std::make_shared<Metal>(Vec3(0.8, 0.8, 0.8), 0.0);
 	auto material_right = std::make_shared<Metal>(Vec3(0.8, 0.6, 0.2), 0.5);
 	auto material_reflective = std::make_shared<Dielectric>(1.50);	
+	
 
 	world.add(std::make_shared<Sphere>(Point3D(0,0,-1), 0.5, material_center));	
 	world.add(std::make_shared<Sphere>(Point3D(0,-100.5, -1), 100, material_ground));
 	world.add(std::make_shared<Sphere>(Point3D(-1.0, 0.0, -1), 0.5, material_left));
 	world.add(std::make_shared<Sphere>(Point3D(1.0, 0.0, -1), 0.5, material_reflective));
 	world.add(std::make_shared<Sphere>(Point3D(-2, 2, 3), 0.5, material_red));
+
 
 	return world;
 }
@@ -133,16 +135,22 @@ int main(int argc, char *argv[]) {
 	std::ofstream file;
 	file.open("example.ppm", std::ios::trunc);
 
-	HittableList world = gen_world(15);
+	HittableList world = gen_test_scene(); 
 
-	Camera camera;
+	//HittableList lights;
+	//auto material_light = std::make_shared<Light>();
+	//lights.add(std::make_shared<Sphere>(Point3D(1.0, 2.0, 1.0), 0.5, material_light));
+	
+	std::vector<Vec3> lights{ Vec3(5.0, 1.5, -1.0) };
+
+	Camera camera(lights);
 
 	camera.aspect_ratio = aspect_ratio;
 	camera.image_width = config.image_width;
 	camera.samples_per_pixel = config.samples_per_pixel;
 	camera.vfov = config.vfov;
 	camera.max_depth = config.maximum_depth;
-	camera.lookfrom = Point3D(13, 2, 3);
+	camera.lookfrom = Point3D(0.0, 4.0, 8.0);
 	camera.lookat = Point3D(0, 0, 0);
 	camera.vup = Vec3(0, 1, 0);
 
