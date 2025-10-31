@@ -8,6 +8,95 @@
 #include <x86intrin.h>
 #include <xmmintrin.h>
 
+class Vec2 {
+public:
+	double e[2];
+
+	Vec2() {}
+
+	Vec2(double x, double y) : e{x, y} {}
+
+	inline double x() const noexcept { return e[0]; }
+	inline double y() const noexcept { return e[1]; }
+
+	Vec2 operator-() const { return Vec2(-e[0], -e[1]); }
+
+	Vec2& operator+=(const Vec2& v) {
+		e[0] += v.x();
+		e[1] += v.y();
+		return *this;
+	}
+
+	Vec2& operator *=(double t) {
+		e[0] *= t;
+		e[1] *= t;
+		return *this;
+	}
+
+	Vec2& operator/=(double t) {
+		return *this *= 1/t;
+	}
+
+	double length() const {
+		return std::sqrt(length_squared());
+	}
+
+	double length_squared() const {
+		return x() * x() + y() * y();
+	}
+
+	bool near_zero() const {
+		auto s = 1e-8;
+		return (std::fabs(e[0]) < s) && (std::fabs(e[1]) < s); 
+	}
+
+	static Vec2 random() {
+		return Vec2(random_double(), random_double());
+	}
+
+	static Vec2 random(double min, double max) {
+		return Vec2(random_double(min,max), random_double(min,max));
+	}
+};
+
+inline std::ostream& operator<<(std::ostream& out, const Vec2& v) {
+	return out << v.x() << ' ' << v.y();
+}
+
+
+inline Vec2 operator+(const Vec2& u, const Vec2& v) {
+	return Vec2(u.x() + v.x(), u.y() + v.y());
+}
+
+inline Vec2 operator-(const Vec2& u, const Vec2& v) {
+	return Vec2(u.x() - v.x(), u.y() - v.y());
+}
+
+inline Vec2 operator*(const Vec2& u, const Vec2& v) {
+	return Vec2(u.x() * v.x(), u.y() * v.y());
+}
+
+inline Vec2 operator*(double t, const Vec2& v) {
+	return Vec2(t*v.x(), t*v.y());
+}
+
+inline Vec2 operator*(const Vec2& v, double t) {
+	return t * v;
+}
+
+inline Vec2 operator/(const Vec2& v, double t) {
+	return (1/t) * v;
+}
+
+inline double dot(const Vec2& u, const Vec2& v) {
+	return u.x() * v.x()
+		+ u.y() * v.y();
+}
+
+//The perp dot is what the z-component of what would be the 3D cross product.
+inline double perp_dot(const Vec2& u, const Vec2& v) {
+	return u.x() * v.y() - u.y() * v.x();
+}
 
 class Vec3 {
 public:
@@ -17,9 +106,9 @@ public:
 
 	Vec3(double x, double y, double z) : e{x, y, z} {} 
 
-        double x() const { return e[0]; }
-	double y() const { return e[1]; }
-	double z() const { return e[2]; }
+        inline double x() const noexcept { return e[0]; }
+	inline double y() const noexcept { return e[1]; }
+	inline double z() const noexcept { return e[2]; }
 
 	Vec3 operator-() const { return Vec3(-e[0], -e[1], -e[2]); }
 	
@@ -63,11 +152,13 @@ public:
 	}
 };
 
+using Point2D = Vec2;
 using Point3D = Vec3;
 
 inline std::ostream& operator<<(std::ostream& out, const Vec3& v) {
 	return out << v.x() << ' ' << v.y() << ' ' << v.z();
 }
+
 
 inline Vec3 operator+(const Vec3& u, const Vec3& v) {
 	return Vec3(u.x() + v.x(), u.y() + v.y(), u.z() + v.z());
@@ -99,19 +190,6 @@ inline double dot(const Vec3& u, const Vec3& v) {
 		+ u.z() * v.z();
 }
 
-inline double dot_sse(const Vec3& u, const Vec3& v) {
-	__m256d m_u = _mm256_setr_pd(u.x(), u.y(), u.z(), 0.0);
-	__m256d m_v = _mm256_setr_pd(v.x(), v.y(), v.z(), 0.0);
-	__m256d prod = _mm256_mul_pd(m_u, m_v); 				
-
-	__m128d lo = _mm256_castpd256_pd128(prod);
-	__m128d hi = _mm256_extractf128_pd(prod, 1);
-
-	__m128d sum2 = _mm_add_pd(lo, hi);
-	__m128d sum1 = _mm_hadd_pd(sum2, sum2);
-	return _mm_cvtsd_f64(sum1);
-}
-
 inline Vec3 cross(const Vec3& u, const Vec3& v) {
 	return Vec3(
 		u.y() * v.z() - u.z() * v.y(),
@@ -121,6 +199,10 @@ inline Vec3 cross(const Vec3& u, const Vec3& v) {
 }
 
 inline Vec3 unit_vector(const Vec3& v) {
+	return v / v.length();
+}
+
+inline Vec2 unit_vector(const Vec2& v) {
 	return v / v.length();
 }
 
@@ -187,6 +269,20 @@ inline Vec3 refract(const Vec3& uv, const Vec3& n, double etai_over_etat) {
 	return r_out_perp + r_out_parallel;
 }
 
+inline double dot_sse(const Vec3& u, const Vec3& v) {
+	__m256d m_u = _mm256_setr_pd(u.x(), u.y(), u.z(), 0.0);
+	__m256d m_v = _mm256_setr_pd(v.x(), v.y(), v.z(), 0.0);
+	__m256d prod = _mm256_mul_pd(m_u, m_v); 				
+
+	__m128d lo = _mm256_castpd256_pd128(prod);
+	__m128d hi = _mm256_extractf128_pd(prod, 1);
+
+	__m128d sum2 = _mm_add_pd(lo, hi);
+	__m128d sum1 = _mm_hadd_pd(sum2, sum2);
+	return _mm_cvtsd_f64(sum1);
+}
+
+
 template<>
 struct std::formatter<Vec3> {
 	
@@ -198,6 +294,19 @@ struct std::formatter<Vec3> {
 	auto format(const Vec3& obj, std::format_context& ctx) const {
 		return std::format_to(ctx.out(), "Vec3({}, {}, {})", obj.x(), obj.y(), obj.z());
 	}
-
 };
+	
+template<>
+struct std::formatter<Vec2> {
+	
+	constexpr auto parse(std::format_parse_context& ctx) {
+ 		
+		return ctx.begin();
+	}
+
+	auto format(const Vec2& obj, std::format_context& ctx) const {
+		return std::format_to(ctx.out(), "Vec2({}, {})", obj.x(), obj.y());
+	}
+};
+
 

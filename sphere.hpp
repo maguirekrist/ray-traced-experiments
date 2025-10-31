@@ -35,13 +35,15 @@ public:
 		rec.set_face_normal(r, outward_normal);
 		rec.mat = mat;
 
+		//the outward_normal is also just the vector on the unit_sphere
+		//Let's calculate the UV for a sphere...
+		auto theta = std::acos(outward_normal.z());
+		auto phi = std::atan2(outward_normal.y(), outward_normal.x());
+
+		rec.uv = Vec2(phi / 2 * pi, theta / pi);
 		return true;
 	}
 
-	Point3D center() const override
-	{
-		return center_;
-	}
 private:
 	Point3D center_;
 	double radius;

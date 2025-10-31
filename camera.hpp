@@ -11,41 +11,10 @@
 #include "vec.hpp"
 #include "thread_pool.hpp"
 #include "lib/tui/tui.hpp"
-
-inline double linear_to_gamma(double linear_component)
-{
-	if (linear_component > 0)
-		return std::sqrt(linear_component);
-
-	return 0.0;
-}
-
-struct Color {
-	int r, g, b;	
-
-	Color() {}
-	Color(int r, int g, int b) : r(r), g(g), b(b) {}
-
-	Color(const Vec3& vector) {
-		static const Interval intensity(0.000, 0.999);
-
-		auto rbyte = linear_to_gamma(vector.x());
-		auto gbyte = linear_to_gamma(vector.y());
-		auto bbyte = linear_to_gamma(vector.z());
+#include "color.hpp"
 
 
-		r = int(256 * intensity.clamp(rbyte));
-		g = int(256 * intensity.clamp(gbyte));
-		b = int(256 * intensity.clamp(bbyte));
-	}
 
-};
-
-inline std::ostream& operator<<(std::ostream& ostream, const Color& color)
-{
-	ostream << color.r << " " << color.g << " " << color.b;
-	return ostream;
-}
 
 struct Kernel {
 	int width = 0;
@@ -72,6 +41,7 @@ public:
 	double focus_dist = 10; // Distance from camera lookfrom point to plane of perfect focus
 	
 
+	Camera() {}
 	explicit Camera(std::vector<Vec3> lights) : light_sources(lights) {  }
 	
 
@@ -221,6 +191,7 @@ private:
 			Vec3 attenuation;
 			if (rec.mat->scatter(r, rec, attenuation, scattered))
 				output = attenuation * ray_color(scattered, depth-1, world);
+					
 			//We need to now attenuate the reflected light if there exists a shadow on this point.
 			//First, we should create a ray that points to a light source whose origin is the hit point.
 			for(auto& light_center : light_sources) {

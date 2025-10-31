@@ -41,10 +41,10 @@ namespace cfg {
 
 	struct Config {
 		std::unordered_map<std::string, KeyValuePair> kv;
-		std::optional<KeyValuePair> get(std::string key) const;
+		std::optional<KeyValuePair> get(const std::string& key) const;
 		
 		template<typename T>
-		T get_value_or(std::string key, T defaultValue) {
+		T get_value_or(const std::string& key, T defaultValue) {
 			if(get(key).has_value())
 			{
 				auto evalue = get(key)->get_value<T>();

@@ -2,13 +2,14 @@
 
 #include "constants.hpp"
 #include "hittable.hpp"
-#include "vec.hpp"
+#include "texture.hpp"
+
 class Material {
 public:
 	virtual ~Material() = default;
 
 	virtual bool scatter(
-		[[maybe_unused]] const Ray& r_in, [[maybe_unused]] const HitRecord& rec, [[maybe_unused]] Vec3& attentuation, [[maybe_unused]] Ray& scattered
+		const Ray& r_in, const HitRecord& rec, Vec3& attentuation, Ray& scattered
 	) const {
 		return false;
 	}
@@ -35,6 +36,29 @@ private:
 	//albedo is latin for "whiteness"
 	//used to define a form of "fractional reflectance"
 	Vec3 albedo;
+};
+
+
+class LambertianTexture : public Material {
+public:
+	LambertianTexture(std::shared_ptr<Texture> texture) : texture_(texture) {}
+	
+	bool scatter(const Ray &r_in, const HitRecord &rec, Vec3 &attentuation, Ray &scattered) const override {
+		auto scatter_direction = rec.normal + random_unit_vector();
+
+		if (scatter_direction.near_zero())
+		{
+			scatter_direction = rec.normal;
+		}
+
+		scattered = Ray(rec.p, scatter_direction);
+		auto albedo = texture_->sample(rec.uv.x(), rec.uv.y());
+		attentuation = albedo.to_vec3();
+		return true;
+	}
+
+private:
+	std::shared_ptr<Texture> texture_;
 };
 
 class Metal : public Material {

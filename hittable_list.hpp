@@ -35,7 +35,4 @@ public:
 		return hit_anything;
 	}
 
-	Point3D center() const override {
-		throw std::runtime_error("Cannot call center on world!");
-	}
 };

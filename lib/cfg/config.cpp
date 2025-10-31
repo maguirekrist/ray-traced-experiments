@@ -47,7 +47,7 @@ std::expected<cfg::Config, std::string> cfg::parse_file(const std::string &path)
 	return std::unexpected(std::format("Unable to open file: {}", path));
 }
 
-std::optional<cfg::KeyValuePair> cfg::Config::get(std::string key) const {
+std::optional<cfg::KeyValuePair> cfg::Config::get(const std::string& key) const {
 	
 	if (kv.contains(key)) {
 		return kv.at(key);	

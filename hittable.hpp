@@ -12,6 +12,8 @@ struct HitRecord {
 	std::shared_ptr<Material> mat; //hit material
 	double t; //the t value that solved the hit equation.
 	bool front_face; //are we facing the front?
+	Vec2 uv;
+
 
 	void set_face_normal(const Ray& r, const Vec3& outward_normal) {
 		// sets the hit record normal vector;
@@ -26,6 +28,4 @@ public:
 	virtual ~Hittable() = default;
 
 	virtual bool hit(const Ray& r, Interval ray_t, HitRecord& rec) const = 0;
-
-	virtual Point3D center() const = 0;
 };
