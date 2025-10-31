@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hittable.hpp"
+#include "vec.hpp"
 
 
 class Sphere : public Hittable {
@@ -35,12 +36,14 @@ public:
 		rec.set_face_normal(r, outward_normal);
 		rec.mat = mat;
 
+		auto world_hit = unit_vector(outward_normal);
 		//the outward_normal is also just the vector on the unit_sphere
 		//Let's calculate the UV for a sphere...
-		auto theta = std::acos(outward_normal.z());
-		auto phi = std::atan2(outward_normal.y(), outward_normal.x());
+		auto theta = std::acos(std::clamp(world_hit.y(), -1.0, 1.0));
+		auto phi = std::atan2(world_hit.z(), world_hit.x());
 
-		rec.uv = Vec2(phi / 2 * pi, theta / pi);
+
+		rec.uv = Vec2(((phi + pi) / (2 * pi)), (1.0 - (theta / pi)));
 		return true;
 	}
 

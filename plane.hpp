@@ -16,16 +16,14 @@ public:
 		//calculate T
 		// t = (r0 - p) * n / Rn_ * n_
 		auto bottom = dot(r.direction(), n_);
-		if (bottom == 0.0) {
-			return false;
-		}
-		auto t = dot((r.origin() - p_), n_) / bottom; 
+		if (std::abs(bottom) < 1e-12) return false;
 
-		if (ray_t.surrounds(t)) {
+		auto t = dot((p_ - r.origin()), n_) / bottom; 
+
+		if (ray_t.contains(t)) {
 			rec.t = t;
 			rec.p = r.at(t);
-			rec.normal = unit_vector(rec.p);
-			rec.front_face = dot(r.direction(), n_) < 0;
+			rec.set_face_normal(r, n_);
 			rec.mat = mat_;
 			rec.uv = Vec2(dot(rec.p - p_, t1_), dot(rec.p - p_, t2_));
 			return true;

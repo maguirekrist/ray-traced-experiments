@@ -30,11 +30,14 @@ public:
 	//
 	
 	Color sample(double u, double v) const override {
-		u = u - std::floor(u);
-		v = v - std::floor(v);
-		
-		int ix = static_cast<int>(std::floor(u * tiles_u_));
-		int iy = static_cast<int>(std::floor(v * tiles_v_));
+
+		auto fract = [](double x){ return x - std::floor(x); };
+
+		auto u_frac = fract(u);
+		auto v_frac = fract(v);
+
+		int ix = static_cast<int>(std::floor(u_frac * tiles_u_));
+		int iy = static_cast<int>(std::floor(v_frac * tiles_v_));
 		
 		bool dark = ((ix + iy) & 1) != 0;
 		if (dark) return Color(primary_.r * 0.4f, primary_.g * 0.4f, primary_.b * 0.4f);
