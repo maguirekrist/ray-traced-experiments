@@ -10,6 +10,7 @@
 #include "constants.hpp"
 #include "material.hpp"
 #include "hittable_list.hpp"
+#include "object.hpp"
 #include "sphere.hpp"
 #include "plane.hpp"
 #include "camera.hpp"
@@ -111,24 +112,30 @@ HittableList gen_world(int objCount = 10) {
 HittableList gen_test_scene() {
 	HittableList world;
 
+	
 	auto test_texture = std::make_shared<TestTexture>(Color(6, 250, 6), 2);
 	auto test_texture_two = std::make_shared<TestTexture>(Color(250, 6, 6), 12);
 
 	auto material_ground = std::make_shared<LambertianTexture>(test_texture);
 	auto material_test = std::make_shared<LambertianTexture>(test_texture_two);
+
 	auto material_center = std::make_shared<Lambertian>(Vec3(0.1, 0.2, 0.5));
 	auto material_red = std::make_shared<Lambertian>(Vec3(1.0, 0.0, 0.0));
 	auto material_left = std::make_shared<Metal>(Vec3(0.8, 0.8, 0.8), 0.0);
 	auto material_right = std::make_shared<Metal>(Vec3(0.8, 0.6, 0.2), 0.5);
 	auto material_glass = std::make_shared<Dielectric>(1.50);	
 
+	
 	world.add(std::make_shared<Plane>(Point3D(0, -1.0, 0), Vec3(0.0, 1.0, 0.0), material_ground));
 	world.add(std::make_shared<Sphere>(Point3D(0,0,-1), 0.5, material_test));	
 	//world.add(std::make_shared<Sphere>(Point3D(0,-100.5, -1), 100, material_ground));
 	world.add(std::make_shared<Sphere>(Point3D(-1.0, 0.0, -1), 0.5, material_left));
 	world.add(std::make_shared<Sphere>(Point3D(1.0, 0.0, -1), 0.5, material_glass));
 	//world.add(std::make_shared<Sphere>(Point3D(-2, 2, 3), 0.5, material_red));
-	
+	//
+
+	auto obj = parse_obj("objs/teapot.obj", material_right,Point3D(0, 0, -5.0));
+	world.add(obj);
 	return world;
 }
 
@@ -139,6 +146,7 @@ int main(int argc, char *argv[]) {
 	auto config = parse_ini("init.ini");
 	std::ofstream file;
 	file.open("example.ppm", std::ios::trunc);
+
 
 	HittableList world = gen_test_scene(); 
 
@@ -154,14 +162,14 @@ int main(int argc, char *argv[]) {
 	camera.samples_per_pixel = config.samples_per_pixel;
 	camera.vfov = config.vfov;
 	camera.max_depth = config.maximum_depth;
-	camera.lookfrom = Point3D(0.0, 1.0, 8.0);
+	camera.lookfrom = Point3D(0.0, 3.0, 4.0);
 	camera.lookat = Point3D(0, 0.5, 0);
 	camera.vup = Vec3(0, 1, 0);
-
 
 	//not using focus blur right now
 	camera.defocus_angle = config.defocus_angle;
 	camera.focus_dist = config.focus_dist;
+
 
 	camera.render(file, world);
 	file.close();
