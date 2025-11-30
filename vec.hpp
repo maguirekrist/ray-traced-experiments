@@ -2,11 +2,14 @@
 
 #include "constants.hpp"
 #include <cmath>
-#include <immintrin.h>
 #include <iostream>
 #include <format>
+#include "simd_config.hpp"
+
+#if HAVE_X86_SIMD
 #include <x86intrin.h>
 #include <xmmintrin.h>
+#endif
 
 class Vec2 {
 public:
@@ -269,6 +272,7 @@ inline Vec3 refract(const Vec3& uv, const Vec3& n, double etai_over_etat) {
 	return r_out_perp + r_out_parallel;
 }
 
+#if HAVE_X86_SIMD
 inline double dot_sse(const Vec3& u, const Vec3& v) {
 	__m256d m_u = _mm256_setr_pd(u.x(), u.y(), u.z(), 0.0);
 	__m256d m_v = _mm256_setr_pd(v.x(), v.y(), v.z(), 0.0);
@@ -281,6 +285,7 @@ inline double dot_sse(const Vec3& u, const Vec3& v) {
 	__m128d sum1 = _mm_hadd_pd(sum2, sum2);
 	return _mm_cvtsd_f64(sum1);
 }
+#endif
 
 
 template<>

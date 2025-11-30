@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 #include <condition_variable>
 #include <functional>
 #include <mutex>
@@ -16,7 +14,7 @@ public:
 	explicit ThreadPool(size_t n = std::max(1u, std::thread::hardware_concurrency())) {
 		for(size_t i = 0; i < n; i++)
 		{
-			_threads.emplace_back([this, i](std::stop_token st) {
+			_threads.emplace_back([this](std::stop_token st) {
 				for(;;)
 				{
 					Job job;
@@ -72,10 +70,9 @@ public:
 	};
 
 private:
-	std::vector<std::jthread> _threads;
 	std::mutex _mutex;
 	std::condition_variable _cv;
 	std::queue<Job> _queue;
 	bool stop = false;
-
+	std::vector<std::jthread> _threads;
 };

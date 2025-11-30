@@ -1,5 +1,5 @@
 CXX := g++
-CXXFLAGS := -std=c++23 -O3 -g -fno-omit-frame-pointer -march=native -ffast-math -Wall -Wextra
+CXXFLAGS := -std=c++23 -O3 -g -fno-omit-frame-pointer -fsanitize=address,undefined -Wall -Wextra
 
 APP_SRCS := main.cpp vec.cpp ray.cpp 
 APP_OBJS := $(APP_SRCS:.cpp=.o)
