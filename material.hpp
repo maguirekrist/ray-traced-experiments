@@ -9,7 +9,7 @@ public:
 	virtual ~Material() = default;
 
 	virtual bool scatter(
-		const Ray& r_in, const HitRecord& rec, Vec3& attentuation, Ray& scattered
+		const Ray&, const HitRecord&, Vec3&, Ray& 
 	) const {
 		return false;
 	}
@@ -19,7 +19,7 @@ class Lambertian : public Material {
 public:
 	Lambertian(const Vec3& albedo) : albedo(albedo) {}
 
-	bool scatter(const Ray &r_in_, const HitRecord &rec, Vec3 &attentuation, Ray &scattered) const override {
+	bool scatter(const Ray&, const HitRecord &rec, Vec3 &attentuation, Ray &scattered) const override {
 		auto scatter_direction = rec.normal + random_unit_vector();
 
 		if (scatter_direction.near_zero())
@@ -43,7 +43,7 @@ class LambertianTexture : public Material {
 public:
 	LambertianTexture(std::shared_ptr<Texture> texture) : texture_(texture) {}
 	
-	bool scatter(const Ray &r_in, const HitRecord &rec, Vec3 &attentuation, Ray &scattered) const override {
+	bool scatter(const Ray&, const HitRecord &rec, Vec3 &attentuation, Ray &scattered) const override {
 		auto scatter_direction = rec.normal + random_unit_vector();
 
 		if (scatter_direction.near_zero())
@@ -115,7 +115,7 @@ private:
 class Light : public Material {
 public:
 
-	bool scatter(const Ray &r_in_, const HitRecord &rec_, Vec3 &attentuation, Ray &scattered_) const override 
+	bool scatter(const Ray&, const HitRecord&, Vec3 &attentuation, Ray&) const override 
 	{
 		attentuation = Vec3(1.0, 1.0, 1.0);
 		return false;

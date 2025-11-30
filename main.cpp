@@ -46,7 +46,7 @@ Config parse_args(int arg_count, char *args[])
 
 Config parse_ini(const std::string path) {
 	Config config;
-	std::expected<cfg::Config, std::string> t_cfg = cfg::parse_file("init.ini");
+	std::expected<cfg::Config, std::string> t_cfg = cfg::parse_file(path);
 	if (t_cfg.has_value())
 	{
 		config.samples_per_pixel = t_cfg->get_value_or("samples_per_pixel", config.samples_per_pixel); 
@@ -139,7 +139,7 @@ HittableList gen_test_scene() {
 	return world;
 }
 
-int main(int argc, char *argv[]) {
+int main() {
 
 	//if we want to parse by args.
 //	auto config = parse_args(argc, argv);	
