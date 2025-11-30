@@ -4,6 +4,7 @@
 #include <print>
 #include <vector>
 #include <cassert>
+#include <chrono>
 #include "ray.hpp"
 #include "hittable.hpp"
 #include "constants.hpp"
@@ -67,6 +68,7 @@ public:
 		std::vector<Vec3> framebuffer(image_width * image_height);
 
 		tui::LoadingIndicator loader(tiles_x * tiles_y);
+		auto start = std::chrono::steady_clock::now();
 
 		{
 			ThreadPool pool;
@@ -86,10 +88,12 @@ public:
 				}
 			}
 		}
-		
+		auto end = std::chrono::steady_clock::now();
+		std::chrono::duration<double> elapsed_seconds = end - start;
+
 		std::cout.flush();
 		
-		std::println("\nWork complete");
+		std::println("\nWork completed in {} seconds!", elapsed_seconds.count());
 
 		for(int y = 0; y < image_height; ++y)
 		{

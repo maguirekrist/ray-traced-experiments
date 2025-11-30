@@ -154,7 +154,6 @@ int main() {
 	//auto material_light = std::make_shared<Light>();
 	//lights.add(std::make_shared<Sphere>(Point3D(1.0, 2.0, 1.0), 0.5, material_light));
 	//std::vector<Vec3> lights{ };
-
 	Camera camera;
 
 	camera.aspect_ratio = aspect_ratio;

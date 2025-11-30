@@ -1,5 +1,16 @@
 CXX := g++
-CXXFLAGS := -std=c++23 -O3 -g -fno-omit-frame-pointer -fsanitize=address,undefined -Wall -Wextra
+CXXFLAGS_VERSION := -std=c++23
+
+DEBUG_FLAGS := -O0 -g -fno-omit-frame-pointer -fsanitize=address,undefined -Wall -Wextra
+PROD_FLAGS := -O2 -march=native -ffast-math
+
+BUILD ?= RELEASE
+
+ifeq ($(BUILD),DEBUG)
+	CXXFLAGS = $(CXXFLAGS_VERSION) $(DEBUG_FLAGS)
+else ifeq ($(BUILD),RELEASE)
+	CXXFLAGS = $(CXXFLAGS_VERSION) $(PROD_FLAGS)
+endif
 
 APP_SRCS := main.cpp vec.cpp ray.cpp 
 APP_OBJS := $(APP_SRCS:.cpp=.o)
